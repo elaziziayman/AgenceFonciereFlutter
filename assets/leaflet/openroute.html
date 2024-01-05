@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="leaflet.css"/>
+    <link rel="stylesheet" href="map.css">
+    <script src="leaflet.js"></script>
+    <title>Document</title>
+</head>
+<body>
+  
+  <div class="container">
+    <div class="column left">
+      <h1>Recherche d'intinéraire</h1>
+      <form id="route-form" class="form">
+        <label for="start">Coordonnées de départ :</label>
+        <input type="text" id="start" name="start" placeholder="Ex: -6.8498,33.9716" required>
+        <label for="end">Coordonnées d'arrivée :</label>
+        <input type="text" id="end" name="end" placeholder="Ex: -7.5898,33.573" required>
+        <button type="submit">Obtenir l'itinéraire</button>
+      </form>
+    </div>
+    <div class="column right">
+      <div id="mapid"></div>
+    </div>
+</div>
+ 
+<script>
+    const openRouteServiceURL = 'https://api.openrouteservice.org/v2/directions/driving-car';
+    const apiKey = '5b3ce3597851110001cf62485d69ff274fe6448ab0be9a8959a6ab99';
+
+    
+    const headers = new Headers();
+    headers.append('Accept', 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8');
+    
+    const requestOptions = {
+      method: 'GET',
+      headers,
+    };
+        
+
+    document.getElementById('route-form').addEventListener('submit', function (event) {
+      event.preventDefault();
+      const startCoordinates = document.getElementById('start').value;
+      const endCoordinates = document.getElementById('end').value;
+      fetchData(startCoordinates, endCoordinates);
+    });
+        // JavaScript : Ajoutez le code pour afficher l'itinéraire sur la carte.
+    const map = L.map('mapid',{drawControl: true}).setView([33.808975,-7.045327],8);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    async function displayRoute(routeData) {
+      // Code pour afficher l'itinéraire sur la carte.
+      clearRoute();
+      // Coordonnées de l'itinéraire.
+      const coordinates = routeData.features[0].geometry.coordinates; 
+
+      // Créez un tableau d'objets de points pour afficher l'itinéraire.
+      const routePoints = coordinates.map(coord => L.latLng(coord[1], coord[0]));
+
+      // Créez une ligne (polyline) pour l'itinéraire.
+      const routePolyline = L.polyline(routePoints, { color: 'blue' });
+
+      // Ajoutez la ligne à la carte.
+      routePolyline.addTo(map);
+      // Ajustez la vue de la carte pour afficher l'itinéraire.
+      map.fitBounds(routePolyline.getBounds());
+    }
+    function clearRoute(){
+    alert("hhhhh");
+      // Code pour retirer l'itinéraire de la carte.
+      map.eachLayer(function (layer) {
+        if (layer instanceof L.Polyline) {
+          map.removeLayer(layer);
+        }
+      });
+    }
+    async function fetchData(startCoordinates, endCoordinates) {
+      try {
+        const response = await fetch(
+          `${openRouteServiceURL}?api_key=${apiKey}&start=${startCoordinates}&end=${endCoordinates}`,
+          requestOptions
+        );
+    
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Itinéraire récupéré avec succès :', data);
+          displayRoute(data);
+        } else {
+          console.error('Erreur de réponse :', response.status, response.statusText);
+          clearRoute();
+        }
+      } catch (error) {
+        console.error('Erreur lors de la récupération de l\'itinéraire :', error);
+      }
+    }
+</script>
+</body>
+</html>
